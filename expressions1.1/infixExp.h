@@ -21,5 +21,8 @@ int isNumerical(ExpTree tr);
 double valueExpTree(ExpTree tr);
 void printExpTreeInfix(ExpTree tr);
 void prefExpTrees();
+int treeFactor(List *lp, ExpTree *tp);
+int treeTerm(List *lp, ExpTree *tp);
+int treeExpression(List *lp, ExpTree *tp);
 
 #endif
