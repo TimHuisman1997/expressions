@@ -6,7 +6,7 @@
 #include <assert.h> /* assert */
 #include "scanner.h"
 #include "recognizeExp.h"
-#include "prefixExp.h"
+#include "infixExp.h"
 
 int main(int argc, char *argv[]) {
   prefExpTrees();

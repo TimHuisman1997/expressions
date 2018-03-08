@@ -19,7 +19,7 @@
 #include "scanner.h"
 #include "recognizeExp.h"
 #include "evalExp.h"
-#include "prefixExp.h"
+#include "infixExp.h"
 
 /* The function newExpTreeNode creates a new node for an expression tree.
  */
@@ -45,31 +45,6 @@ int valueIdentifier(List *lp, char **sp) {
     return 1;
   }
   return 0;/* prefixExp.h, Gerard Renardel, 29 January 2014 */
-
-#ifndef PREFIXEXP_H
-#define PREFIXEXP_H
-
-/* Here the definition of the type tree of binary trees with nodes containing tokens.
- */
-
-typedef struct ExpTreeNode *ExpTree;
-  
-typedef struct ExpTreeNode {
-  TokenType tt;
-  Token t;
-  ExpTree left;
-  ExpTree right;
-} ExpTreeNode;
-
-ExpTree newExpTreeNode(TokenType tt, Token t, ExpTree tL, ExpTree tR);
-int valueIdentifier(List *lp, char **sp);
-int isNumerical(ExpTree tr);
-double valueExpTree(ExpTree tr);
-void printExpTreeInfix(ExpTree tr);
-void prefExpTrees();
-
-#endif
-
 }
 
 /* The function valueOperator recognizes an arithmetic operator in a token list
@@ -77,12 +52,25 @@ void prefExpTrees();
  * Here the auxiliary function isOperator is used.
  */
 
-int isOperator(char c) {
-  return ( c == '+' || c == '-' || c == '*' || c == '/');
+int isOperatorA(char c) {
+  return ( c == '*' || c == '/');
 }
 
-int valueOperator(List *lp, char *cp) {
-  if (*lp != NULL && (*lp)->tt == Symbol && isOperator(((*lp)->t).symbol) ) {
+int isOperatorB(char c) {
+  return ( c == '+' || c == '-');
+}
+
+int valueOperatorA(List *lp, char *cp) {
+  if (*lp != NULL && (*lp)->tt == Symbol && isOperatorA(((*lp)->t).symbol) ) {
+    *cp = ((*lp)->t).symbol;
+    *lp = (*lp)->next;
+    return 1;
+  }
+  return 0;
+}
+
+int valueOperatorB(List *lp, char *cp) {
+  if (*lp != NULL && (*lp)->tt == Symbol && isOperatorB(((*lp)->t).symbol) ) {
     *cp = ((*lp)->t).symbol;
     *lp = (*lp)->next;
     return 1;
@@ -111,62 +99,70 @@ void freeExpTree(ExpTree tr) {
  * The return value indicates whether the action is successful.
  * Observe that we use ordinary recursion, not mutual recursion.
  */
-
-int treePrefixExpression(List *lp, ExpTree *tp) { 
-  double w;
-  char *s;
-  char c;
-  Token t;
-  ExpTree tL, tR;
-  
-  if(treePrefixExpression(lp, &tL) && valueOperatorA(lp, &c) && treePrefixExpression(lp, &tR)) {
-	  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  // base case: current node in expression tree is a leaf
+ 
+int treeFactor(List *lp, ExpTree *tp){
+	double w; 
+	char *s;
+	Token t; 
+	
   if ( valueNumber(lp,&w) ) {
     t.number = (int)w;
     *tp = newExpTreeNode(Number, t, NULL, NULL);
     return 1;
   }
+  
   if ( valueIdentifier(lp,&s) ) {
     t.identifier = s;
     *tp = newExpTreeNode(Identifier, t, NULL, NULL);
     return 1;
   }
-  
-  
-  if ( valueOperator(lp,&c) && treePrefixExpression(lp,&tL) ) {
-    if ( treePrefixExpression(lp,&tR) ) {
-      t.symbol = c;
-      *tp = newExpTreeNode(Symbol, t, tL, tR);
-      return 1;
-    } else { /* withuot 'else' the program works fine, but there is a memory leak */
-      freeExpTree(tL);
-      return 0;
-    }
+	
+  if(acceptCharacter(lp, '(') && treeExpression(lp, tp) &&  acceptCharacter(lp, ')')){
+	  return 1;
   }
   return 0;
 }
+ 
+int treeTerm(List *lp, ExpTree *tp){
+	char c;
+	Token t;
+	ExpTree tL, tR;
+	
+	if(treeFactor(lp, &tL)){
+		if( valueOperatorA(lp, &c)&&(treeTerm(lp, &tR) || treeFactor(lp, &tR))){
+			t.symbol = c;
+			*tp = newExpTreeNode(Symbol, t, tL, tR);
+			return 1;
+		
+		} else {
+			freeExpTree(tL);
+			return 0;
+		}
+	}
+	return 0;
+} 
+
+int treeExpression(List *lp, ExpTree *tp) { 
+  char c;
+  Token t;
+  ExpTree tL, tR;
+  
+  printf("x\n");
+  
+  if(treeTerm(lp, &tL)){
+	  if(valueOperatorB(lp, &c)&&(treeExpression(lp, &tR)||treeTerm(lp, &tR))){
+		  t.symbol = c;
+		  *tp = newExpTreeNode(Symbol, t, tL, tR);
+		  return 1;
+	  
+		} else {
+			freeExpTree(tL);
+			return 0;
+		}
+	}
+  return 0;
+}
+
 
 /* The function printExpTreeInfix does what its name suggests.
  */
@@ -250,7 +246,7 @@ void prefExpTrees() {
     printf("the token list is ");
     printList(tl);
     tl1 = tl;
-    if ( treePrefixExpression(&tl1,&t) && tl1 == NULL ) { 
+    if ( treeExpression(&tl1,&t) && tl1 == NULL ) { 
          /* there should be no tokens left */
       printf("in infix notation: ");
       printExpTreeInfix(t);
