@@ -44,7 +44,32 @@ int valueIdentifier(List *lp, char **sp) {
     *lp = (*lp)->next;
     return 1;
   }
-  return 0;
+  return 0;/* prefixExp.h, Gerard Renardel, 29 January 2014 */
+
+#ifndef PREFIXEXP_H
+#define PREFIXEXP_H
+
+/* Here the definition of the type tree of binary trees with nodes containing tokens.
+ */
+
+typedef struct ExpTreeNode *ExpTree;
+  
+typedef struct ExpTreeNode {
+  TokenType tt;
+  Token t;
+  ExpTree left;
+  ExpTree right;
+} ExpTreeNode;
+
+ExpTree newExpTreeNode(TokenType tt, Token t, ExpTree tL, ExpTree tR);
+int valueIdentifier(List *lp, char **sp);
+int isNumerical(ExpTree tr);
+double valueExpTree(ExpTree tr);
+void printExpTreeInfix(ExpTree tr);
+void prefExpTrees();
+
+#endif
+
 }
 
 /* The function valueOperator recognizes an arithmetic operator in a token list
@@ -93,6 +118,30 @@ int treePrefixExpression(List *lp, ExpTree *tp) {
   char c;
   Token t;
   ExpTree tL, tR;
+  
+  if(treePrefixExpression(lp, &tL) && valueOperatorA(lp, &c) && treePrefixExpression(lp, &tR)) {
+	  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   // base case: current node in expression tree is a leaf
   if ( valueNumber(lp,&w) ) {
     t.number = (int)w;
@@ -104,6 +153,8 @@ int treePrefixExpression(List *lp, ExpTree *tp) {
     *tp = newExpTreeNode(Identifier, t, NULL, NULL);
     return 1;
   }
+  
+  
   if ( valueOperator(lp,&c) && treePrefixExpression(lp,&tL) ) {
     if ( treePrefixExpression(lp,&tR) ) {
       t.symbol = c;
