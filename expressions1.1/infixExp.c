@@ -52,16 +52,16 @@ int valueIdentifier(List *lp, char **sp) {
  * Here the auxiliary function isOperator is used.
  */
 
-int isOperatorA(char c) {
+int isOperatorTD(char c) {
   return ( c == '*' || c == '/');
 }
 
-int isOperatorB(char c) {
+int isOperatorPM(char c) {
   return ( c == '+' || c == '-');
 }
 
-int valueOperatorA(List *lp, char *cp) {
-  if (*lp != NULL && (*lp)->tt == Symbol && isOperatorA(((*lp)->t).symbol) ) {
+int valueOperatorTD(List *lp, char *cp) {
+  if (*lp != NULL && (*lp)->tt == Symbol && isOperatorTD(((*lp)->t).symbol) ) {
     *cp = ((*lp)->t).symbol;
     *lp = (*lp)->next;
     return 1;
@@ -69,12 +69,13 @@ int valueOperatorA(List *lp, char *cp) {
   return 0;
 }
 
-int valueOperatorB(List *lp, char *cp) {
-  if (*lp != NULL && (*lp)->tt == Symbol && isOperatorB(((*lp)->t).symbol) ) {
+int valueOperatorPM(List *lp, char *cp) {
+  if (*lp != NULL && (*lp)->tt == Symbol && isOperatorPM(((*lp)->t).symbol) ) {
     *cp = ((*lp)->t).symbol;
     *lp = (*lp)->next;
     return 1;
   }
+  printf("%d\n", ((*lp)->tt == Symbol));
   return 0;
 }
 
@@ -127,40 +128,48 @@ int treeTerm(List *lp, ExpTree *tp){
 	char c;
 	Token t;
 	ExpTree tL, tR;
+	List copyL = *lp;
 	
-	if(treeFactor(lp, &tL)){
-		if( valueOperatorA(lp, &c)&&(treeTerm(lp, &tR) || treeFactor(lp, &tR))){
-			t.symbol = c;
-			*tp = newExpTreeNode(Symbol, t, tL, tR);
+	if(!treeFactor(&copyL, &tL)) return 0;
+	if(valueOperatorTD(&copyL, &c) && treeFactor(&copyL, &tR)){
+		t.symbol = c;
+		*tp = newExpTreeNode(Symbol, t, tL, tR);
+		*lp = copyL;
+		return 1;
+	} else {
+		freeExpTree(tL);
+		copyL = *lp;
+		if(treeFactor(&copyL, tp)) {
+			*lp =copyL;
 			return 1;
-		
-		} else {
-			freeExpTree(tL);
-			return 0;
 		}
 	}
 	return 0;
 } 
 
 int treeExpression(List *lp, ExpTree *tp) { 
-  char c;
-  Token t;
-  ExpTree tL, tR;
-  
-  printf("x\n");
-  
-  if(treeTerm(lp, &tL)){
-	  if(valueOperatorB(lp, &c)&&(treeExpression(lp, &tR)||treeTerm(lp, &tR))){
-		  t.symbol = c;
-		  *tp = newExpTreeNode(Symbol, t, tL, tR);
-		  return 1;
-	  
-		} else {
-			freeExpTree(tL);
-			return 0;
+  	char c;
+	Token t;
+	ExpTree tL, tR;
+	List copyL = *lp;
+	
+	if(!treeTerm(&copyL, &tL)) return 0;
+	if(valueOperatorPM(&copyL, &c)&&treeExpression(&copyL, &tR)){
+		printf("x\n");
+		t.symbol = c;
+		*tp = newExpTreeNode(Symbol, t, tL, tR);
+		*lp = copyL;
+		return 1;
+	} else {
+		printf("xx\n");
+		freeExpTree(tL);
+		copyL = *lp;
+		if(treeTerm(&copyL, tp)) {
+			*lp = copyL;
+			return 1;
 		}
 	}
-  return 0;
+	return 0;
 }
 
 
@@ -246,7 +255,7 @@ void prefExpTrees() {
     printf("the token list is ");
     printList(tl);
     tl1 = tl;
-    if ( treeExpression(&tl1,&t) && tl1 == NULL ) { 
+    if ( treeExpression(&tl1,&t)&&tl1==0) { 
          /* there should be no tokens left */
       printf("in infix notation: ");
       printExpTreeInfix(t);
